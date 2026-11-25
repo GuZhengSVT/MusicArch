@@ -1,0 +1,1 @@
+"""Bundled MusicArch exchange schemas."""

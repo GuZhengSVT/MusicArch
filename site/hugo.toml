@@ -1,0 +1,8 @@
+baseURL = 'http://localhost:8000/'
+languageCode = 'zh-CN'
+title = 'MusicArch'
+disableKinds = ['taxonomy', 'term', 'sitemap']
+
+[outputs]
+home = ['HTML']
+section = ['HTML']

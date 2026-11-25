@@ -1,0 +1,8 @@
+<ol class="rank-chart" role="list">
+  {{ range . }}
+    <li>
+      <div class="rank-label"><span>{{ .label }}</span><strong>{{ .count }}</strong></div>
+      <div class="rank-track" aria-hidden="true"><span style="{{ printf "--bar-size:%v%%" .width | safeCSS }}"></span></div>
+    </li>
+  {{ end }}
+</ol>

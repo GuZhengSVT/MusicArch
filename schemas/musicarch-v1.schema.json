@@ -1,0 +1,965 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MusicArch v1 archive",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "schema_version",
+    "accounts",
+    "recordings",
+    "sources",
+    "collections",
+    "memberships",
+    "annotations",
+    "decisions"
+  ],
+  "properties": {
+    "format": {
+      "const": "musicarch"
+    },
+    "schema_version": {
+      "type": "integer",
+      "const": 1
+    },
+    "accounts": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/account"
+      }
+    },
+    "recordings": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/recording"
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/source"
+      }
+    },
+    "collections": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/collection"
+      }
+    },
+    "memberships": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/membership"
+      }
+    },
+    "annotations": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "overrides",
+        "tags"
+      ],
+      "properties": {
+        "overrides": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/override"
+          }
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/tag"
+          }
+        }
+      }
+    },
+    "decisions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "separations",
+        "redirects"
+      ],
+      "properties": {
+        "separations": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/separation"
+          }
+        },
+        "redirects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/redirect"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "account_key": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "prefixItems": [
+        {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]*$"
+        },
+        {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^\\s:]+$"
+        }
+      ]
+    },
+    "source_key": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 2,
+      "prefixItems": [
+        {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]*$"
+        },
+        {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^\\s:]+$"
+        }
+      ]
+    },
+    "collection_key": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "prefixItems": [
+        {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]*$"
+        },
+        {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^\\s:]+$"
+        },
+        {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^\\s:]+$"
+        }
+      ]
+    },
+    "artist": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "id"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^[^\\s:]+$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "origin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "source"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "collection",
+            "platform_detail",
+            "album_detail",
+            "manual",
+            "title"
+          ]
+        },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/source_key"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "if": {
+        "properties": {
+          "kind": {
+            "const": "manual"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "source": {
+            "type": "null"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "source": {
+            "$ref": "#/$defs/source_key"
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "title",
+        "artists",
+        "aliases",
+        "album",
+        "album_id",
+        "artwork_url",
+        "duration_ms",
+        "release_date",
+        "version",
+        "isrc",
+        "language",
+        "genre"
+      ],
+      "properties": {
+        "title": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "artists": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/artist"
+          }
+        },
+        "aliases": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "album": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "album_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^[^\\s:]+$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "artwork_url": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "duration_ms": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9223372036854775807
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "release_date": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "version": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "isrc": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z]{2}-?[A-Za-z0-9]{3}-?[0-9]{2}-?[0-9]{5}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "language": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "genre": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "account": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "platform",
+        "account_id",
+        "alias"
+      ],
+      "properties": {
+        "platform": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]*$"
+        },
+        "account_id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^\\s:]+$"
+        },
+        "alias": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^\\s:]+$"
+        }
+      }
+    },
+    "recording": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "metadata",
+        "field_sources"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^\\s:]+$"
+        },
+        "metadata": {
+          "$ref": "#/$defs/metadata"
+        },
+        "field_sources": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "title": {
+              "$ref": "#/$defs/origin"
+            },
+            "artists": {
+              "$ref": "#/$defs/origin"
+            },
+            "aliases": {
+              "$ref": "#/$defs/origin"
+            },
+            "album": {
+              "$ref": "#/$defs/origin"
+            },
+            "album_id": {
+              "$ref": "#/$defs/origin"
+            },
+            "artwork_url": {
+              "$ref": "#/$defs/origin"
+            },
+            "duration_ms": {
+              "$ref": "#/$defs/origin"
+            },
+            "release_date": {
+              "$ref": "#/$defs/origin"
+            },
+            "version": {
+              "$ref": "#/$defs/origin"
+            },
+            "isrc": {
+              "$ref": "#/$defs/origin"
+            },
+            "language": {
+              "$ref": "#/$defs/origin"
+            },
+            "genre": {
+              "$ref": "#/$defs/origin"
+            }
+          }
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "platform",
+        "track_id",
+        "recording_id",
+        "url",
+        "status",
+        "metadata",
+        "field_sources"
+      ],
+      "properties": {
+        "platform": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]*$"
+        },
+        "track_id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^\\s:]+$"
+        },
+        "recording_id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^\\s:]+$"
+        },
+        "url": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "enum": [
+            "available",
+            "unresolved",
+            "unavailable"
+          ]
+        },
+        "metadata": {
+          "$ref": "#/$defs/metadata"
+        },
+        "field_sources": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "title": {
+              "enum": [
+                "collection",
+                "platform_detail",
+                "album_detail"
+              ]
+            },
+            "artists": {
+              "enum": [
+                "collection",
+                "platform_detail",
+                "album_detail"
+              ]
+            },
+            "aliases": {
+              "enum": [
+                "collection",
+                "platform_detail",
+                "album_detail"
+              ]
+            },
+            "album": {
+              "enum": [
+                "collection",
+                "platform_detail",
+                "album_detail"
+              ]
+            },
+            "album_id": {
+              "enum": [
+                "collection",
+                "platform_detail",
+                "album_detail"
+              ]
+            },
+            "artwork_url": {
+              "enum": [
+                "collection",
+                "platform_detail",
+                "album_detail"
+              ]
+            },
+            "duration_ms": {
+              "enum": [
+                "collection",
+                "platform_detail",
+                "album_detail"
+              ]
+            },
+            "release_date": {
+              "enum": [
+                "collection",
+                "platform_detail",
+                "album_detail"
+              ]
+            },
+            "version": {
+              "enum": [
+                "collection",
+                "platform_detail",
+                "album_detail"
+              ]
+            },
+            "isrc": {
+              "enum": [
+                "collection",
+                "platform_detail",
+                "album_detail"
+              ]
+            },
+            "language": {
+              "enum": [
+                "collection",
+                "platform_detail",
+                "album_detail"
+              ]
+            },
+            "genre": {
+              "enum": [
+                "collection",
+                "platform_detail",
+                "album_detail"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "collection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "account",
+        "key",
+        "type",
+        "name",
+        "visibility",
+        "status",
+        "playlist_id"
+      ],
+      "properties": {
+        "account": {
+          "$ref": "#/$defs/account_key"
+        },
+        "key": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^\\s:]+$"
+        },
+        "type": {
+          "enum": [
+            "liked",
+            "owned",
+            "subscribed",
+            "specified"
+          ]
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "visibility": {
+          "enum": [
+            "public",
+            "private",
+            "unknown"
+          ]
+        },
+        "status": {
+          "enum": [
+            "active",
+            "missing"
+          ]
+        },
+        "playlist_id": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^[^\\s:]+$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "membership": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "collection",
+        "source",
+        "position",
+        "added_at"
+      ],
+      "properties": {
+        "collection": {
+          "$ref": "#/$defs/collection_key"
+        },
+        "source": {
+          "$ref": "#/$defs/source_key"
+        },
+        "position": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9223372036854775807
+        },
+        "added_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time",
+              "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]+)?Z$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "override": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "recording_id",
+        "field",
+        "value"
+      ],
+      "properties": {
+        "recording_id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^\\s:]+$"
+        },
+        "field": {
+          "enum": [
+            "title",
+            "artists",
+            "album",
+            "release_date",
+            "version",
+            "language",
+            "genre"
+          ]
+        },
+        "value": {}
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "field": {
+                "const": "title"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "field": {
+                "const": "artists"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/artist"
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "field": {
+                "const": "album"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "field": {
+                "const": "release_date"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]{4}(-[0-9]{2}(-[0-9]{2})?)?$"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "field": {
+                "const": "version"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "field": {
+                "const": "language"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "field": {
+                "const": "genre"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "anyOf": [
+                  {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "tag": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "recording_id",
+        "dimension",
+        "value",
+        "label",
+        "origin",
+        "action"
+      ],
+      "properties": {
+        "recording_id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^\\s:]+$"
+        },
+        "dimension": {
+          "enum": [
+            "custom",
+            "artist",
+            "decade",
+            "version",
+            "language",
+            "genre"
+          ]
+        },
+        "value": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "origin": {
+          "const": "manual"
+        },
+        "action": {
+          "enum": [
+            "add",
+            "remove"
+          ]
+        }
+      }
+    },
+    "separation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "left",
+        "right"
+      ],
+      "properties": {
+        "left": {
+          "$ref": "#/$defs/source_key"
+        },
+        "right": {
+          "$ref": "#/$defs/source_key"
+        }
+      }
+    },
+    "redirect": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "old_id",
+        "recording_id"
+      ],
+      "properties": {
+        "old_id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^\\s:]+$"
+        },
+        "recording_id": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[^\\s:]+$"
+        }
+      }
+    }
+  }
+}

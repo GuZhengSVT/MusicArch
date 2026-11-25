@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>音乐收藏 · {{ site.Title }}</title>
+  <link rel="stylesheet" href="{{ "catalog.css" | relURL }}?v={{ readFile "static/catalog.css" | sha256 }}">
+  <script defer src="{{ "catalog.js" | relURL }}?v={{ readFile "static/catalog.js" | sha256 }}"></script>
+</head>
+<body>
+  {{ $catalog := hugo.Data.musicarch.catalog }}
+  <header class="masthead">
+    <div class="shell masthead-inner">
+      {{ partial "navigation.html" "catalog" }}
+      <div class="headline">
+        <h1>音乐收藏</h1>
+        <dl class="counts">
+          <div><dt>歌曲</dt><dd>{{ len $catalog.recordings }}</dd></div>
+          <div><dt>艺人</dt><dd>{{ len $catalog.artists }}</dd></div>
+          <div><dt>歌单</dt><dd>{{ len $catalog.collections }}</dd></div>
+        </dl>
+      </div>
+    </div>
+  </header>
+  <main class="shell">
+    <form id="filters" class="filters" aria-label="筛选音乐" hidden>
+      <div class="filter-row filter-primary">
+        <label><span>搜索</span><input id="query" type="search" placeholder="歌名或艺人"></label>
+        <label class="filter-select"><span>艺人</span><select id="artist">
+          <button type="button"><selectedcontent></selectedcontent></button>
+          <option value="">全部艺人</option>
+          {{ range $catalog.artists }}<option value="{{ .id }}">{{ .label }}（{{ .count }}）</option>{{ end }}
+        </select></label>
+        <label class="filter-select"><span>歌单</span><select id="collection">
+          <button type="button"><selectedcontent></selectedcontent></button>
+          <option value="">全部歌单</option>
+          {{ range $catalog.collections }}<option value="{{ .id }}">{{ .name }}（{{ len .members }}）</option>{{ end }}
+        </select></label>
+        <button type="reset">清除筛选</button>
+      </div>
+      {{ $primaryTags := slice "decade" "version" "language" "genre" }}
+      <div class="filter-row filter-tags">
+        {{ range where $catalog.tag_groups "dimension" "in" $primaryTags }}
+          <label class="filter-select"><span>{{ .label }}</span><select id="tag-{{ .dimension }}" data-tag-filter {{ if not .tags }}disabled{{ end }}>
+            <button type="button"><selectedcontent></selectedcontent></button>
+            <option value="">全部{{ .label }}</option>
+            {{ range .tags }}<option value="{{ .id }}">{{ .label }}（{{ .count }}）</option>{{ end }}
+          </select></label>
+        {{ end }}
+        {{ $otherTags := slice }}
+        {{ range where $catalog.tag_groups "dimension" "not in" $primaryTags }}
+          {{ if or (eq .dimension "custom") (gt (len .tags) 1) }}{{ $otherTags = $otherTags | append . }}{{ end }}
+        {{ end }}
+        {{ with $otherTags }}
+          <label class="filter-select"><span>其他标签</span><select id="tag-other" data-tag-filter>
+            <button type="button"><selectedcontent></selectedcontent></button>
+            <option value="">全部其他标签</option>
+            {{ range . }}<optgroup label="{{ .label }}">
+              {{ range .tags }}<option value="{{ .id }}">{{ .label }}（{{ .count }}）</option>{{ end }}
+            </optgroup>{{ end }}
+          </select></label>
+        {{ end }}
+      </div>
+    </form>
+    <p id="results" class="results" role="status" aria-live="polite" hidden></p>
+    <section class="all-songs" data-view="all" aria-labelledby="all-title">
+      <h2 id="all-title">全部歌曲</h2>
+      {{ if $catalog.recordings }}
+        <ol class="tracks tracks-all">
+          {{ range $catalog.recordings }}{{ partial "tracks.html" (dict "track" . "links" .links) }}{{ end }}
+        </ol>
+      {{ else }}<p class="empty">所选歌单暂无歌曲。</p>{{ end }}
+    </section>
+    <div id="playlists" class="playlists">
+      {{ range $catalog.collections }}
+        <details data-view="{{ .id }}">
+          <summary><span>{{ .name }}</span><span class="summary-count">{{ len .members }} 个位置{{ if eq .status "missing" }} · 上次快照{{ end }}</span></summary>
+          {{ if .members }}
+            <ol class="tracks tracks-playlist">
+              {{ range $index, $member := .members }}
+                {{ partial "tracks.html" (dict "track" (index $catalog.recordings (int $member.recording)) "links" (slice $member.link) "position" (add $index 1)) }}
+              {{ end }}
+            </ol>
+          {{ else }}<p class="empty">这个歌单暂无歌曲。</p>{{ end }}
+        </details>
+      {{ end }}
+    </div>
+    <p id="empty-results" class="empty" hidden>没有符合筛选条件的歌曲。</p>
+  </main>
+</body>
+</html>

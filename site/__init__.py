@@ -1,0 +1,1 @@
+"""Bundled Hugo source files."""

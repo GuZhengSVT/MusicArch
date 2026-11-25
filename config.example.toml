@@ -1,0 +1,8 @@
+[accounts.netease.main]
+endpoint = "http://127.0.0.1:3000"
+cookie_env = "MUSICARCH_NETEASE_COOKIE"
+# Alternatively, remove cookie_env and set cookie_file (relative to this file).
+# cookie_file = ".musicarch/netease-main.cookie"
+
+[site]
+collections = ["netease:main:liked", "netease:main:owned"]

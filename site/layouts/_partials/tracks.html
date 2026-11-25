@@ -1,0 +1,19 @@
+{{ $track := .track }}
+<li class="track" {{ with .position }}value="{{ . }}"{{ end }} data-search="{{ delimit (slice $track.title (delimit $track.artists " ") (delimit $track.aliases " ")) " " }}" data-artists="{{ delimit $track.artist_keys " " }}" data-tags="{{ range $track.tags }}{{ .id }} {{ end }}">
+  <div class="track-name">
+    <h3 {{ with .position }}data-position="{{ . }}"{{ end }}>{{ $track.title }}</h3>
+    {{ with $track.version }}<span class="version">{{ . }}</span>{{ end }}
+    {{ if eq $track.status "unresolved" }}<span class="availability">详情待补</span>{{ end }}
+    {{ if eq $track.status "unavailable" }}<span class="availability">已下架或不可用</span>{{ end }}
+  </div>
+  <p class="credit">{{ if $track.artists }}{{ delimit $track.artists "、" }}{{ else }}艺人未知{{ end }}</p>
+  {{ with $track.album }}<p class="album">{{ . }}{{ with $track.release_date }} <span>· {{ . }}</span>{{ end }}</p>{{ end }}
+  <div class="track-tags">{{ range $track.tags }}<span>{{ .label }}</span>{{ end }}</div>
+  <ul class="links" aria-label="平台来源">
+    {{ range .links }}
+      <li>{{ if .url }}<a href="{{ .url }}">{{ .platform }}<span aria-hidden="true"> ↗</span></a>{{ else }}<span>{{ .platform }} · 无原曲链接</span>{{ end }}
+      {{ if and (ne $track.status .status) (eq .status "unavailable") }}<small>不可用</small>{{ end }}
+      {{ if and (ne $track.status .status) (eq .status "unresolved") }}<small>详情待补</small>{{ end }}</li>
+    {{ end }}
+  </ul>
+</li>

@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "musicarch"
+version = "0.1.0"
+description = "Portable archive and static catalog for your music collection"
+requires-python = ">=3.11"
+dependencies = ["jsonschema>=4.18,<5"]
+
+[project.scripts]
+musicarch = "musicarch.cli:main"
+
+[tool.setuptools]
+include-package-data = false
+packages = ["musicarch", "musicarch.providers", "musicarch_schemas", "musicarch_site"]
+package-dir = {musicarch = "src/musicarch", musicarch_schemas = "schemas", musicarch_site = "site"}
+
+[tool.setuptools.package-data]
+musicarch_schemas = ["*.json"]
+musicarch_site = ["hugo.toml", "content/analysis/*.md", "layouts/*.html", "layouts/analysis/*.html", "layouts/_partials/*.html", "static/*"]

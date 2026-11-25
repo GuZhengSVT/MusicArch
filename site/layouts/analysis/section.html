@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ .Title }} · {{ site.Title }}</title>
+  <link rel="stylesheet" href="{{ "catalog.css" | relURL }}?v={{ readFile "static/catalog.css" | sha256 }}">
+  <link rel="stylesheet" href="{{ "analysis.css" | relURL }}?v={{ readFile "static/analysis.css" | sha256 }}">
+  <script defer src="{{ "analysis.js" | relURL }}?v={{ readFile "static/analysis.js" | sha256 }}"></script>
+</head>
+<body>
+  {{ $analysis := hugo.Data.musicarch.analysis }}
+  <header class="masthead">
+    <div class="shell masthead-inner">
+      {{ partial "navigation.html" "analysis" }}
+      <div class="headline">
+        <h1>{{ .Title }}</h1>
+        <dl class="counts">
+          <div><dt>歌曲</dt><dd>{{ $analysis.recordings }}</dd></div>
+          <div><dt>艺人</dt><dd>{{ $analysis.artists_count }}</dd></div>
+          <div><dt>歌单</dt><dd>{{ $analysis.collections }}</dd></div>
+        </dl>
+      </div>
+    </div>
+  </header>
+  <main class="shell analysis-main">
+    {{ if $analysis.recordings }}
+      <dl class="summary-grid">
+        {{ range $analysis.highlights }}
+          <div>
+            <dt>{{ .caption }}</dt>
+            <dd><strong>{{ .value }}</strong>{{ with .detail }}<span>{{ . }}</span>{{ end }}</dd>
+          </div>
+        {{ end }}
+      </dl>
+
+      <div class="chart-grid">
+        <section class="chart-card chart-genres" aria-labelledby="genre-title">
+          <h2 id="genre-title">常见流派</h2>
+          <p class="chart-detail">{{ $analysis.genres_labeled }} 首有流派标注。同一首带多个流派时分别计入。</p>
+          {{ if $analysis.genres }}{{ partial "ranked-chart.html" $analysis.genres }}
+          {{ else }}<p class="chart-empty">暂无流派标注。</p>{{ end }}
+        </section>
+
+        <section class="chart-card chart-languages" aria-labelledby="language-title">
+          <h2 id="language-title">语种分布</h2>
+          <p class="chart-detail">{{ $analysis.languages_labeled }} 首有语种标注。同曲多语种按组计入。</p>
+          {{ $stops := slice }}
+          {{ range $analysis.languages }}{{ $stops = $stops | append (printf "%s %v%% %v%%" .color .start .end) }}{{ end }}
+          <div class="donut">
+            <div class="donut-ring" aria-hidden="true" style="{{ printf "--ring:conic-gradient(%s)" (delimit $stops ", ") | safeCSS }}">
+              <span><strong>{{ $analysis.recordings }}</strong>首歌曲</span>
+            </div>
+          </div>
+          <ul class="legend" role="list">
+            {{ range $analysis.languages }}
+              <li>
+                <i aria-hidden="true" style="{{ printf "--swatch:%s" .color | safeCSS }}"></i>
+                <span>{{ .label }}</span><strong>{{ .count }}</strong><span class="legend-percent">{{ .percent }}%</span>
+              </li>
+            {{ end }}
+          </ul>
+        </section>
+
+        <section class="chart-card chart-eras" aria-labelledby="era-title">
+          <h2 id="era-title">发行年代</h2>
+          <p class="chart-detail">按曲库的发行时间统计，{{ $analysis.eras_unknown }} 首年代未知。</p>
+          {{ if $analysis.eras }}
+            <div class="chart-scroll">
+              <ol class="era-chart" role="list">
+                {{ range $analysis.eras }}
+                  <li style="{{ printf "--bar-size:%v%%" .width | safeCSS }}">
+                    <div class="era-column"><span class="era-count">{{ .count }}</span><span class="era-fill" aria-hidden="true"></span></div>
+                    <span class="era-label">{{ index (split .label " ") 0 }}</span>
+                  </li>
+                {{ end }}
+              </ol>
+            </div>
+          {{ else }}<p class="chart-empty">暂无可用的发行年份。</p>{{ end }}
+        </section>
+
+        <section class="chart-card chart-timeline" aria-labelledby="timeline-title">
+          <h2 id="timeline-title">收藏轨迹</h2>
+          <p class="chart-detail">{{ $analysis.timeline_labeled }} 首有收藏日期，按每首首次加入所选歌单的年份统计。</p>
+          {{ if $analysis.timeline }}
+            <figure class="timeline" data-timeline>
+              <canvas class="timeline-chart" aria-hidden="true" hidden></canvas>
+              <p class="timeline-focus" hidden></p>
+              <details open>
+                <summary>按年查看数值</summary>
+                <table class="timeline-table">
+                  <thead><tr><th scope="col">年份</th><th scope="col">歌曲数</th></tr></thead>
+                  <tbody>
+                    {{ range $analysis.timeline }}<tr data-year="{{ .year }}" data-count="{{ .count }}"><th scope="row">{{ .year }}</th><td>{{ .count }}</td></tr>{{ end }}
+                  </tbody>
+                </table>
+              </details>
+            </figure>
+          {{ else }}<p class="chart-empty">暂无可用的收藏日期。</p>{{ end }}
+        </section>
+
+        <section class="chart-card chart-heatmap" aria-labelledby="heatmap-title">
+          <h2 id="heatmap-title">语种与流派</h2>
+          <p class="chart-detail">常见语种与流派的交叉统计的歌曲数。颜色越深，歌曲越多。</p>
+          {{ if $analysis.heatmap.rows }}
+            <div class="chart-scroll" role="region" aria-label="语种与流派交叉表" tabindex="0">
+              <table class="heatmap">
+                <thead><tr><th scope="col">语种</th>{{ range $analysis.heatmap.columns }}<th scope="col">{{ . }}</th>{{ end }}</tr></thead>
+                <tbody>
+                  {{ range $analysis.heatmap.rows }}
+                    <tr>
+                      <th scope="row">{{ .label }}</th>
+                      {{ range .cells }}
+                        <td{{ if .dark }} class="heat-dark"{{ end }} style="{{ printf "--heat:%s" .color | safeCSS }}">{{ .count }}</td>
+                      {{ end }}
+                    </tr>
+                  {{ end }}
+                </tbody>
+              </table>
+            </div>
+          {{ else }}<p class="chart-empty">暂无同时标注语种与流派的歌曲。</p>{{ end }}
+        </section>
+
+        <section class="chart-card chart-artists" aria-labelledby="artist-title">
+          <h2 id="artist-title">常收藏的艺人</h2>
+          <p class="chart-detail">合作曲目对每位署名艺人各计一次。</p>
+          {{ if $analysis.artists }}{{ partial "ranked-chart.html" $analysis.artists }}
+          {{ else }}<p class="chart-empty">暂无艺人署名。</p>{{ end }}
+        </section>
+
+        <section class="chart-card chart-versions" aria-labelledby="version-title">
+          <h2 id="version-title">歌曲版本</h2>
+          <p class="chart-detail">汇总标有翻唱、现场、重混等版本的歌曲。</p>
+          {{ if $analysis.versions }}{{ partial "ranked-chart.html" $analysis.versions }}
+          {{ else }}<p class="chart-empty">暂无版本标注。</p>{{ end }}
+        </section>
+      </div>
+    {{ else }}
+      <p class="empty">所选歌单暂无歌曲。同步或导入曲库后即可查看分析。</p>
+    {{ end }}
+  </main>
+</body>
+</html>
