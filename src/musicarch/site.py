@@ -20,6 +20,7 @@ from .store import MusicArchError, collection_selector, transaction
 
 
 MIN_HUGO = (0, 156, 0)
+SONGS_PER_PAGE = 50
 PLATFORMS = {"netease": "网易云音乐", "qq": "QQ 音乐", "kugou": "酷狗音乐", "spotify": "Spotify", "youtube_music": "YouTube Music"}
 DIMENSIONS = {"custom": "自定义", "decade": "年代", "version": "版本", "language": "语种", "genre": "流派", "platform": "平台"}
 PRIMARY_TAGS = ("decade", "version", "language", "genre")
@@ -127,7 +128,7 @@ def catalog_data(db, keys):
             if date:
                 rid = member["recording_id"]
                 first_added[rid] = min(first_added.get(rid, date), date)
-    catalog = {"recordings": output, "collections": public_collections,
+    catalog = {"recordings": output, "collections": public_collections, "page_size": SONGS_PER_PAGE,
                "artists": [facet for (dimension, _), facet in facets.items() if dimension == "artist"],
                "tag_groups": [{"dimension": dimension, "label": label,
                                "tags": [facet for (kind, _), facet in facets.items() if kind == dimension]}
@@ -159,12 +160,33 @@ def normalize_base_url(base_url):
 
 def stage_site(source):
     template = files("musicarch_site")
-    for name in ("hugo.toml", "content/analysis/_index.md", "layouts/home.html", "layouts/analysis/section.html",
-                 "layouts/_partials/navigation.html", "layouts/_partials/tracks.html", "layouts/_partials/ranked-chart.html",
+    for name in ("hugo.toml", "content/analysis/_index.md", "layouts/home.html", "layouts/catalog/single.html",
+                 "layouts/analysis/section.html", "layouts/_partials/catalog.html", "layouts/_partials/navigation.html",
+                 "layouts/_partials/tracks.html", "layouts/_partials/ranked-chart.html",
                  "static/catalog.css", "static/catalog.js", "static/analysis.css", "static/analysis.js"):
         target = source / name
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(template.joinpath(*name.split("/")).read_bytes())
+
+
+def stage_catalog_pages(source, catalog):
+    search = [[" ".join((row["title"], " ".join(row["artists"]), " ".join(row["aliases"]))),
+               row["artist_keys"], [tag["id"] for tag in row["tags"]]] for row in catalog["recordings"]]
+    views = [("all", search)] + [
+        (collection["id"], [search[member["recording"]] for member in collection["members"]])
+        for collection in catalog["collections"]
+    ]
+    for view, rows in views:
+        index = source / "static/catalog-data" / view / "search.json"
+        index.parent.mkdir(parents=True, exist_ok=True)
+        index.write_text(json.dumps(rows, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+        path = "" if view == "all" else f"playlists/{view}/"
+        pages = max(1, (len(rows) + SONGS_PER_PAGE - 1) // SONGS_PER_PAGE)
+        for page in range(2 if view == "all" else 1, pages + 1):
+            url = path if page == 1 else f"{path}page/{page}/"
+            content = source / "content" / f"{view}-{page}.md"
+            content.write_text(json.dumps({"type": "catalog", "url": f"/{url}", "view": view, "page_number": page}) + "\n",
+                               encoding="utf-8")
 
 
 def publish(workspace, output, data):
@@ -199,6 +221,7 @@ def build_site(db, keys, base_url=None):
         staging = Path(directory)
         source, output = staging / "source", staging / "public"
         stage_site(source)
+        stage_catalog_pages(source, catalog)
         for name, payload in data.items():
             atomic_json(source / "data/musicarch" / name, payload)
         args = [hugo, "--source", str(source), "--destination", str(output), "--quiet"]

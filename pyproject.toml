@@ -19,4 +19,4 @@ package-dir = {musicarch = "src/musicarch", musicarch_schemas = "schemas", music
 
 [tool.setuptools.package-data]
 musicarch_schemas = ["*.json"]
-musicarch_site = ["hugo.toml", "content/analysis/*.md", "layouts/*.html", "layouts/analysis/*.html", "layouts/_partials/*.html", "static/*"]
+musicarch_site = ["hugo.toml", "content/analysis/*.md", "layouts/*.html", "layouts/analysis/*.html", "layouts/catalog/*.html", "layouts/_partials/*.html", "static/*"]

@@ -1,5 +1,5 @@
 {{ $track := .track }}
-<li class="track" {{ with .position }}value="{{ . }}"{{ end }} data-search="{{ delimit (slice $track.title (delimit $track.artists " ") (delimit $track.aliases " ")) " " }}" data-artists="{{ delimit $track.artist_keys " " }}" data-tags="{{ range $track.tags }}{{ .id }} {{ end }}">
+<li class="track" {{ with .position }}value="{{ . }}"{{ end }}>
   <div class="track-name">
     <h3 {{ with .position }}data-position="{{ . }}"{{ end }}>{{ $track.title }}</h3>
     {{ with $track.version }}<span class="version">{{ . }}</span>{{ end }}

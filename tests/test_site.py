@@ -17,6 +17,46 @@ def public_files(path):
 
 @unittest.skipUnless(shutil.which("hugo"), "需要 Hugo 0.156+")
 class SiteTest(unittest.TestCase):
+    def test_catalog_pages_limit_rows_and_keep_playlist_positions(self):
+        with TemporaryDirectory() as folder, fake_service() as (endpoint, state), chdir(folder):
+            root = Path(folder)
+            root.joinpath("config.toml").write_text(f'[accounts.netease.main]\nendpoint = "{endpoint}"\n')
+            song_ids = list(range(301, 404))
+            state["data"]["songs"].update({
+                str(song_id): {"id": song_id, "name": f"分页歌曲 {song_id}", "ar": [{"name": "测试艺人"}]}
+                for song_id in song_ids
+            })
+            liked = state["data"]["playlists"]["998"]
+            liked["trackIds"] = [{"id": song_id} for song_id in reversed(song_ids)]
+            liked["trackCount"] = len(song_ids)
+            with patch.dict(os.environ, {"MUSICARCH_NETEASE_COOKIE": "MUSIC_U=synthetic"}):
+                synced = run_cli(root, "sync", "netease", "--account", "main", "--include", "liked")
+                self.assertEqual(synced[0], 0, synced)
+            built = run_cli(root, "site", "build", "--collection", "netease:main:liked", "--base-url", "https://example.org/music/")
+            self.assertEqual(built[0], 0, built)
+
+            output = root / ".musicarch/public"
+            for path, view, first_id, step in (("", "all", 301, 1), ("playlists/collection-1/", "collection-1", 403, -1)):
+                with self.subTest(view=view):
+                    first = (output / path / "index.html").read_text()
+                    second = (output / path / "page/2/index.html").read_text()
+                    last = (output / path / "page/3/index.html").read_text()
+                    self.assertEqual([page.count('<li class="track"') for page in (first, second, last)], [50, 50, 3])
+                    self.assertIn(f'href="/music/{path}page/2/"', first)
+                    self.assertIn(f'href="/music/{path}"', second)
+                    self.assertIn(f"分页歌曲 {first_id + 50 * step}", second)
+                    self.assertNotIn(f"分页歌曲 {first_id + 50 * step}", first)
+                    self.assertIn('rel="next" hidden', last)
+                    search = json.loads((output / f"catalog-data/{view}/search.json").read_text())
+                    self.assertEqual(len(search), len(song_ids))
+                    self.assertEqual([row[0].split()[1] for row in search], [str(first_id + step * i) for i in range(len(song_ids))])
+                    fragment = (output / f"catalog-data/{view}/2.html").read_text()
+                    self.assertEqual(fragment.count('<li class="track"'), 50)
+                    self.assertIn(fragment, second)
+                    if view != "all":
+                        self.assertIn('value="51"', fragment)
+                        self.assertIn('value="100"', fragment)
+
     def test_restored_site_selection_and_empty_collection(self):
         with TemporaryDirectory() as folder, fake_service() as (endpoint, state), chdir(folder):
             root = Path(folder)
